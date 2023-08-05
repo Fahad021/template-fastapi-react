@@ -51,19 +51,20 @@ async def get_current_active_superuser(
 
 
 def authenticate_user(db, email: str, password: str):
-    user = get_user_by_email(db, email)
-    if not user:
+    if user := get_user_by_email(db, email):
+        return (
+            False
+            if not security.verify_password(password, user.hashed_password)
+            else user
+        )
+    else:
         return False
-    if not security.verify_password(password, user.hashed_password):
-        return False
-    return user
 
 
 def sign_up_new_user(db, email: str, password: str):
-    user = get_user_by_email(db, email)
-    if user:
+    if user := get_user_by_email(db, email):
         return False  # User already exists
-    new_user = create_user(
+    return create_user(
         db,
         schemas.UserCreate(
             email=email,
@@ -72,4 +73,3 @@ def sign_up_new_user(db, email: str, password: str):
             is_superuser=False,
         ),
     )
-    return new_user
